@@ -6,6 +6,7 @@ use tokio::fs::remove_file;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
+use tokio::time::{timeout, Duration};
 
 async fn write_file(file_path: &PathBuf, content: String) -> Result<File, io::Error> {
     let mut file = File::create(file_path).await?;
@@ -58,11 +59,12 @@ pub async fn execute_code(lang: Language, code: String) -> Result<ExecutionResul
             container_file_path.to_str().unwrap()
         ))
         .arg(format!("toyrce:{}", lang.to_string().to_lowercase()))
-        .output()
-        .await?;
+        .output();
 
-    let stdout = String::from_utf8(cmd.stdout).unwrap();
-    let stderr = String::from_utf8(cmd.stderr).unwrap();
+    let output = timeout(Duration::from_secs(20), cmd).await??;
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let stderr = String::from_utf8(output.stderr).unwrap();
 
     remove_file(host_file_path).await?;
 

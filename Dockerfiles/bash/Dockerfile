@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-COPY Dockerfiles/killer.sh $HOME
+COPY ./Dockerfiles/killer.sh $HOME
 WORKDIR $HOME
 RUN apk add --no-cache bash
 
