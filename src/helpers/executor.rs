@@ -2,6 +2,7 @@ use super::language::Language;
 use serde::Serialize;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::process::Output;
 use tokio::fs::remove_file;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
@@ -41,6 +42,21 @@ pub async fn execute_code(lang: Language, code: String) -> Result<ExecutionResul
 
     write_file(&host_file_path, code).await?;
 
+    let output = run_docker_container(&host_file_path, &container_file_path, &lang).await?;
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let stderr = String::from_utf8(output.stderr).unwrap();
+
+    remove_file(host_file_path).await?;
+
+    Ok(ExecutionResult { stdout, stderr })
+}
+
+async fn run_docker_container(
+    host_path: &PathBuf,
+    container_path: &PathBuf,
+    lang: &Language,
+) -> Result<Output, io::Error> {
     let cmd = Command::new("docker")
         .arg("run")
         .arg("--rm")
@@ -49,18 +65,31 @@ pub async fn execute_code(lang: Language, code: String) -> Result<ExecutionResul
         .arg("-v")
         .arg(format!(
             "{}:/{}:ro",
-            host_file_path.to_str().unwrap(),
-            container_file_path.to_str().unwrap()
+            host_path.to_str().unwrap(),
+            container_path.to_str().unwrap()
         ))
         .arg(format!("toyrce:{}", lang.to_string().to_lowercase()))
         .output();
 
-    let output = timeout(Duration::from_secs(20), cmd).await??;
+    timeout(Duration::from_secs(20), cmd).await?
+}
 
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let stderr = String::from_utf8(output.stderr).unwrap();
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    remove_file(host_file_path).await?;
+    #[tokio::test]
+    async fn test_execute_code() {
+        let code = String::from("console.log('Hello world')");
+        let result = execute_code(Language::Javascript, code).await.unwrap();
+        assert_eq!(result.stdout, "Hello world\n");
+        assert_eq!(result.stderr, "");
+    }
 
-    Ok(ExecutionResult { stdout, stderr })
+    #[tokio::test]
+    async fn test_execute_code_with_error() {
+        let code = String::from("console.log('Hello world')");
+        let result = execute_code(Language::Rust, code).await.unwrap();
+        assert_eq!(result.stdout, "");
+    }
 }

@@ -62,4 +62,28 @@ static LANGUAGE_EXTENSIONS: Lazy<HashMap<Language, &'static str>> = Lazy::new(||
 });
 
 static LANGUAGE_FILE_NAMES: Lazy<HashMap<Language, &'static str>> =
-    Lazy::new(|| HashMap::from([(Language::Java, "Main.java")]));
+    Lazy::new(|| HashMap::from([(Language::Java, "Main")]));
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_extension() {
+        assert_eq!(Language::Javascript.get_extension(), "js");
+        assert_eq!(Language::Rust.get_extension(), "rs");
+        assert_eq!(Language::Typescript.get_extension(), "ts");
+        assert_eq!(Language::Go.get_extension(), "go");
+        assert_eq!(Language::C.get_extension(), "c");
+        assert_eq!(Language::Cpp.get_extension(), "cpp");
+        assert_eq!(Language::Python.get_extension(), "py");
+        assert_eq!(Language::Java.get_extension(), "java");
+        assert_eq!(Language::Bash.get_extension(), "sh");
+    }
+
+    #[test]
+    fn test_get_file_name() {
+        assert_eq!(Language::Java.get_file_name(), "Main");
+        assert_eq!(Language::Rust.get_file_name(), "solution");
+    }
+}

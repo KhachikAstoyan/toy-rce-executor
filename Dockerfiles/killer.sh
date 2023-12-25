@@ -14,6 +14,5 @@ pid=$!
 wait $pid
 
 if [ $? != 0 ]; then
-    echo "Process is still running after 10 seconds. Killing it..."
     kill $pid
 fi
