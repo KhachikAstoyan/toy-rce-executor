@@ -33,17 +33,11 @@ pub async fn execute_code(lang: Language, code: String) -> Result<ExecutionResul
     let id = uuid::Uuid::new_v4();
 
     let mut host_file_path = std::env::temp_dir();
-    host_file_path.push(format!("{}", id));
+    host_file_path.push(id.to_string());
     host_file_path.set_extension(lang.get_extension());
 
     let container_file_path =
         Path::new(lang.get_file_name().as_str()).with_extension(lang.get_extension());
-
-    println!(
-        "{}, {}",
-        host_file_path.to_str().unwrap(),
-        container_file_path.to_str().unwrap()
-    );
 
     write_file(&host_file_path, code).await?;
 
